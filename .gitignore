@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# TypeScript v1 declaration files
+typings/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+# Ignore all .tgz files
+*.tgz
+
+# But don't ignore gsap-bonus.tgz
+!gsap-bonus.tgz
+
+# dotenv environment variables file
+.env
+
+# Production files
+dist
