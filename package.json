@@ -52,9 +52,11 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@barba/core": "^2.10.3",
     "@finsweet/ts-utils": "^0.40.0",
     "gsap": "file:gsap-bonus.tgz",
-    "lenis": "^1.1.14"
+    "lenis": "^1.1.14",
+    "swiper": "^11.1.14"
   },
   "engines": {
     "pnpm": ">=9"

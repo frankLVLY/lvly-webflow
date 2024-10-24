@@ -1,0 +1,39 @@
+/* ========================================================================================
+   General
+   ======================================================================================== */
+
+/* ========================================================================================
+   Project template page
+   ======================================================================================== */
+
+/* Credits accordion */
+.project_credits_wrap {
+  max-height: 7.5em;
+  opacity: 1;
+  transition:
+    max-height var(--animation-primary),
+    opacity var(--animation-primary);
+}
+.project_credits_wrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+  pointer-events: none; /* Make sure the overlay doesn't interfere with interactions */
+  transition: opacity var(--animation-primary);
+}
+.project_toggle_svg {
+  transition: transform var(--animation-primary);
+}
+.project_hero_credits_wrap.active .project_credits_wrap {
+  opacity: 1;
+}
+.project_hero_credits_wrap.active .project_credits_wrap::before {
+  opacity: 0;
+}
+.project_hero_credits_wrap.active .project_toggle_svg {
+  transform: rotate(0deg);
+}
