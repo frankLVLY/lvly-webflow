@@ -41,7 +41,7 @@ let lenis;
 // ============================================
 function globalNavbar() {
   let lastScrollTop = 0;
-  const scrollThreshold = 400;
+  const scrollThreshold = 50;
   let isNavbarHidden = false;
 
   lenis.on('scroll', ({ scroll }) => {
