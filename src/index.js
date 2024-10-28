@@ -149,11 +149,13 @@ function pageEditorTemplate() {
     }
   });
 
-  // Play video active slide
-  // const video = $('.swiper-slide-active').find('video')[0];
+  // $('.lightbox_visual_video video').each(function () {
+  //   $(this)[0].play();
+  // });
 
   // if (video) {
-  //   video.play();
+  //   console.log(video.tagName); // Logs the tag name, should be "VIDEO"
+  //   console.log(video.nodeName); // Also logs the tag name, should be "VIDEO"
   // }
 
   // Editor Lightbox Swiper
@@ -169,17 +171,22 @@ function pageEditorTemplate() {
     grabCursor: true,
     // on: {
     //   slideChange: function () {
-    //     // Pause all videos
-    //     $('video').each(function () {
-    //       $(this).get(0).pause();
-    //     });
-
-    //     // Play video of the active slide
-    //     const video = $('.swiper-slide-active').find('video')[0];
-
-    //     if (video) {
-    //       video.play();
+    //     const videos = $('.lightbox_visual_video video');
+    //     const activeVideo = $('.swiper-slide-active .lightbox_visual_video video')[0];
+    //     if (activeVideo) {
+    //       videos.each(function () {
+    //         $(this)[0].pause();
+    //       });
+    //       activeVideo.play();
     //     }
+
+    //     // $('.lightbox_visual_video video').each(function () {
+    //     //   $(this)[0].pause();
+    //     // });
+    //     // const video = $('.swiper-slide-active .lightbox_visual_video video')[0];
+    //     // if (video) {
+    //     //   video.play();
+    //     // }
     //   },
     // },
   });
