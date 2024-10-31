@@ -6,19 +6,23 @@
 import './styles.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import 'swiper/css/effect-coverflow';
 
+// Library imports
+import barba from '@barba/core';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
-// Library imports
 import Lenis from 'lenis';
 import Swiper from 'swiper';
-import { Navigation } from 'swiper/modules';
+import { EffectCoverflow, Navigation } from 'swiper/modules';
 
+// Register libraries
 gsap.registerPlugin(ScrollTrigger, SplitText);
+Swiper.use([EffectCoverflow, Navigation]);
 
 // ========================================================================================
-// Init all scripts
+// Barba JS
 // ========================================================================================
 
 $(document).ready(() => {
@@ -64,6 +68,29 @@ function globalNavbar() {
     }
 
     lastScrollTop = nowScrollTop;
+  });
+
+  // Hamburger toggle
+  const hamburger = $('.nav_hamburger'); // Open & close target
+  const navWrap = $('.nav_wrap'); // Active class target
+
+  // Toggle the 'active' class on the hamburger
+  hamburger.on('click', function () {
+    navWrap.toggleClass('active');
+
+    if (navWrap.hasClass('active')) {
+      lenis.stop();
+    } else {
+      lenis.start();
+    }
+  });
+
+  // Escape key listener (added once, checks if menu is active)
+  $(document).on('keydown', function (e) {
+    if (e.key === 'Escape' && navWrap.hasClass('active')) {
+      navWrap.removeClass('active');
+      lenis.start();
+    }
   });
 }
 
@@ -149,47 +176,53 @@ function pageEditorTemplate() {
     }
   });
 
-  // $('.lightbox_visual_video video').each(function () {
-  //   $(this)[0].play();
-  // });
-
-  // if (video) {
-  //   console.log(video.tagName); // Logs the tag name, should be "VIDEO"
-  //   console.log(video.nodeName); // Also logs the tag name, should be "VIDEO"
-  // }
-
   // Editor Lightbox Swiper
   const lightboxSwiper = new Swiper('.swiper.is-editor', {
-    modules: [Navigation],
-    speed: 700,
+    modules: [Navigation, EffectCoverflow],
+    slidesPerView: 'auto',
+    loopedSlides: 3,
+    speed: 500,
     loop: true,
-    loopedSlides: 4,
-    slidesPerView: 1,
-    navigation: {
-      nextEl: '.lightbox_arrow_wrap',
-    },
+    keyboard: true,
     grabCursor: true,
-    // on: {
-    //   slideChange: function () {
-    //     const videos = $('.lightbox_visual_video video');
-    //     const activeVideo = $('.swiper-slide-active .lightbox_visual_video video')[0];
-    //     if (activeVideo) {
-    //       videos.each(function () {
-    //         $(this)[0].pause();
-    //       });
-    //       activeVideo.play();
-    //     }
-
-    //     // $('.lightbox_visual_video video').each(function () {
-    //     //   $(this)[0].pause();
-    //     // });
-    //     // const video = $('.swiper-slide-active .lightbox_visual_video video')[0];
-    //     // if (video) {
-    //     //   video.play();
-    //     // }
-    //   },
-    // },
+    navigation: {
+      nextEl: '.swiper-next',
+    },
+    effect: 'coverflow',
+    coverflowEffect: {
+      rotate: 0,
+      scale: 0.9,
+      slideShadows: false,
+    },
   });
+
+  // Play the video of the active slide and show controls
+  const videos = $('.lightbox_visual_video video');
+  const activeVideo = $('.swiper-slide-active .lightbox_visual_video video');
+
+  // Check if there are any videos on the page
+  if (videos.length && activeVideo.length) {
+    // Play the video of the active slide and show controls
+    activeVideo[0].setAttribute('controls', 'true');
+    activeVideo[0].play();
+
+    // Listen for slide change to control video playback
+    lightboxSwiper.on('slideChangeTransitionEnd', function () {
+      const activeVideo = $('.swiper-slide-active .lightbox_visual_video video');
+
+      // Ensure activeVideo exists before attempting to manipulate it
+      if (activeVideo.length) {
+        $(videos).each(function () {
+          this.pause(); // Pause the video
+          this.currentTime = 0; // Reset to the start
+          $(this).removeAttr('controls'); // Optionally remove controls
+        });
+
+        activeVideo[0].setAttribute('controls', 'true');
+        activeVideo[0].play();
+      }
+    });
+  }
 }
 
 // ========================================================================================
