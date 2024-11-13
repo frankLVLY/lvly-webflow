@@ -1102,6 +1102,59 @@
   init_live_reload();
   var import_core = __toESM(require_barba_umd(), 1);
 
+  // node_modules/.pnpm/@finsweet+ts-utils@0.40.0/node_modules/@finsweet/ts-utils/dist/webflow/index.js
+  init_live_reload();
+
+  // node_modules/.pnpm/@finsweet+ts-utils@0.40.0/node_modules/@finsweet/ts-utils/dist/webflow/getSiteId.js
+  init_live_reload();
+  var getSiteId = (page = document) => page.documentElement.getAttribute("data-wf-site");
+
+  // node_modules/.pnpm/@finsweet+ts-utils@0.40.0/node_modules/@finsweet/ts-utils/dist/webflow/restartWebflow.js
+  init_live_reload();
+  var restartWebflow = async (modules) => {
+    const { Webflow } = window;
+    if (!Webflow || !("destroy" in Webflow) || !("ready" in Webflow) || !("require" in Webflow))
+      return;
+    if (modules && !modules.length)
+      return;
+    if (!modules) {
+      Webflow.destroy();
+      Webflow.ready();
+    }
+    if (!modules || modules.includes("ix2")) {
+      const ix2 = Webflow.require("ix2");
+      if (ix2) {
+        const { store, actions } = ix2;
+        const { eventState } = store.getState().ixSession;
+        const stateEntries = Object.entries(eventState);
+        if (!modules)
+          ix2.destroy();
+        ix2.init();
+        await Promise.all(stateEntries.map((state) => store.dispatch(actions.eventStateChanged(...state))));
+      }
+    }
+    if (!modules || modules.includes("commerce")) {
+      const commerce = Webflow.require("commerce");
+      const siteId = getSiteId();
+      if (commerce && siteId) {
+        commerce.destroy();
+        commerce.init({ siteId, apiUrl: "https://render.webflow.com" });
+      }
+    }
+    if (modules?.includes("lightbox"))
+      Webflow.require("lightbox")?.ready();
+    if (modules?.includes("slider")) {
+      const slider = Webflow.require("slider");
+      if (slider) {
+        slider.redraw();
+        slider.ready();
+      }
+    }
+    if (modules?.includes("tabs"))
+      Webflow.require("tabs")?.redraw();
+    return new Promise((resolve) => Webflow.push(() => resolve(void 0)));
+  };
+
   // node_modules/.pnpm/gsap@file+gsap-bonus.tgz/node_modules/gsap/index.js
   init_live_reload();
 
@@ -13777,41 +13830,100 @@
   // src/index.js
   gsapWithCSS.registerPlugin(ScrollTrigger2, SplitText);
   Swiper.use([EffectCoverflow, Navigation]);
-  $(document).ready(() => {
-    useLenis();
+  var lenis;
+  function useScripts() {
     useAnchorLinks();
     useHistoryLinks();
+    useResetScroll();
     globalNavbar();
+    pageHome();
     pageProjectTemplate();
     pageEditorTemplate();
+  }
+  import_core.default.init({
+    sync: true,
+    debug: true,
+    timeout: 7e3,
+    transitions: [
+      {
+        name: "default",
+        async once() {
+          useLenis();
+          lenis.stop();
+          lenis.start();
+          useScripts();
+        },
+        async leave(data) {
+          lenis.stop();
+          const elementsToAnimate = $(data.current.container).find("[data-animate-in]");
+          await gsapWithCSS.to(elementsToAnimate, {
+            y: "-2vw",
+            opacity: 0,
+            duration: 0.5,
+            ease: "power3.in",
+            stagger: 0.08
+          });
+        },
+        async beforeEnter() {
+          await restartWebflow();
+          useLenis();
+          lenis.start();
+          useScripts();
+        },
+        async enter(data) {
+          data.next.container.classList.add("is-transitioning");
+          const elementsToAnimate = $(data.next.container).find("[data-animate-in]");
+          await gsapWithCSS.from(elementsToAnimate, {
+            y: "2vw",
+            opacity: 0,
+            duration: 1.2,
+            ease: "power3.out",
+            stagger: 0.08
+          });
+          data.next.container.classList.remove("is-transitioning");
+        },
+        async afterEnter() {
+          window.scrollTo(0, 0);
+          ScrollTrigger2.refresh();
+        }
+      }
+    ]
   });
-  var lenis;
   function globalNavbar() {
     let lastScrollTop = 0;
     const scrollThreshold = 50;
     let isNavbarHidden = false;
-    lenis.on("scroll", ({ scroll: scroll2 }) => {
-      const nowScrollTop = scroll2;
-      if (nowScrollTop > lastScrollTop) {
-        if (nowScrollTop > scrollThreshold && !isNavbarHidden) {
-          $(".nav_contain").addClass("active");
-          isNavbarHidden = true;
+    if (window.location.pathname !== "/") {
+      lenis.on("scroll", ({ scroll: scroll2 }) => {
+        const nowScrollTop = scroll2;
+        if (nowScrollTop > lastScrollTop) {
+          if (nowScrollTop > scrollThreshold && !isNavbarHidden) {
+            $(".nav_contain").addClass("active");
+            isNavbarHidden = true;
+          }
+        } else {
+          if (isNavbarHidden) {
+            $(".nav_contain").removeClass("active");
+            isNavbarHidden = false;
+          }
         }
-      } else {
-        if (isNavbarHidden) {
-          $(".nav_contain").removeClass("active");
-          isNavbarHidden = false;
-        }
-      }
-      lastScrollTop = nowScrollTop;
-    });
+        lastScrollTop = nowScrollTop;
+      });
+    }
     const hamburger = $(".nav_hamburger");
     const navWrap = $(".nav_wrap");
+    const menuLinks = $(".nav_menu_upper_link");
     hamburger.on("click", function() {
       navWrap.toggleClass("active");
       if (navWrap.hasClass("active")) {
         lenis.stop();
       } else {
+        lenis.start();
+      }
+    });
+    menuLinks.on("click", function() {
+      if (navWrap.hasClass("active")) {
+        navWrap.removeClass("active");
         lenis.start();
       }
     });
@@ -13821,6 +13933,31 @@
         lenis.start();
       }
     });
+  }
+  function pageHome() {
+    if (window.location.pathname === "/") {
+      let switchItUp2 = function() {
+        const imgElement = document.querySelector(".insights_img_body_img");
+        const newContainer = document.querySelector(".insights_img_body_wrap");
+        if (imgElement && newContainer) {
+          newContainer.appendChild(imgElement);
+        }
+      };
+      var switchItUp = switchItUp2;
+      const state = Flip.getState(".insights_img_body_img");
+      switchItUp2();
+      Flip.to(state, {
+        duration: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".insights_wrap",
+          start: "30% top",
+          endTrigger: ".process_home_wrap",
+          end: "top top",
+          scrub: true
+        }
+      });
+    }
   }
   function pageProjectTemplate() {
     $(".project_hero_video_wrap").on("click", function() {
@@ -13947,6 +14084,11 @@
         window.location.href = "https://lvly-tv.webflow.io/work";
       }
     });
+  }
+  function useResetScroll() {
+    window.onbeforeunload = function() {
+      window.scrollTo(0, 0);
+    };
   }
 })();
 /*! Bundled license information:

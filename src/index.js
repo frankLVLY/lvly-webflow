@@ -10,6 +10,7 @@ import 'swiper/css/effect-coverflow';
 
 // Library imports
 import barba from '@barba/core';
+import { restartWebflow } from '@finsweet/ts-utils';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
@@ -25,16 +26,79 @@ Swiper.use([EffectCoverflow, Navigation]);
 // Barba JS
 // ========================================================================================
 
-$(document).ready(() => {
-  useLenis();
+let lenis;
+
+function useScripts() {
   useAnchorLinks();
   useHistoryLinks();
+  useResetScroll();
   globalNavbar();
+  pageHome();
   pageProjectTemplate();
   pageEditorTemplate();
-});
+}
 
-let lenis;
+barba.init({
+  sync: true,
+  debug: true,
+  timeout: 7000,
+  transitions: [
+    {
+      name: 'default',
+      async once() {
+        useLenis();
+        lenis.stop();
+        lenis.start();
+        useScripts();
+      },
+      async leave(data) {
+        lenis.stop();
+        // data.current.container.classList.add('pointer-events-none');
+        // Select elements with data-animate-in attribute and animate them with stagger on leave
+        const elementsToAnimate = $(data.current.container).find('[data-animate-in]');
+
+        await gsap.to(elementsToAnimate, {
+          y: '-2vw',
+          opacity: 0,
+          duration: 0.5,
+          ease: 'power3.in',
+          stagger: 0.08,
+        });
+      },
+      async beforeEnter() {
+        await restartWebflow();
+        useLenis();
+        lenis.start();
+        useScripts();
+      },
+      async enter(data) {
+        // Set page container to fixed
+        data.next.container.classList.add('is-transitioning');
+        // data.next.container.classList.add('pointer-events-none');
+
+        // Select elements with data-animate-in attribute and animate them with stagger on enter
+        const elementsToAnimate = $(data.next.container).find('[data-animate-in]');
+
+        await gsap.from(elementsToAnimate, {
+          y: '2vw',
+          opacity: 0,
+          duration: 1.2,
+          ease: 'power3.out',
+          stagger: 0.08,
+        });
+
+        // Remove fixed class
+        data.next.container.classList.remove('is-transitioning');
+        // data.next.container.classList.remove('pointer-events-none');
+        // data.current.container.classList.remove('pointer-events-none');
+      },
+      async afterEnter() {
+        window.scrollTo(0, 0);
+        ScrollTrigger.refresh();
+      },
+    },
+  ],
+});
 
 // ========================================================================================
 // Globals
@@ -48,31 +112,35 @@ function globalNavbar() {
   const scrollThreshold = 50;
   let isNavbarHidden = false;
 
-  lenis.on('scroll', ({ scroll }) => {
-    const nowScrollTop = scroll;
+  // Check if the current URL is not the homepage
+  if (window.location.pathname !== '/') {
+    lenis.on('scroll', ({ scroll }) => {
+      const nowScrollTop = scroll;
 
-    if (nowScrollTop > lastScrollTop) {
-      // Scrolling down
-      if (nowScrollTop > scrollThreshold && !isNavbarHidden) {
-        // Scroll down past threshold: hide navbar
-        $('.nav_contain').addClass('active');
-        isNavbarHidden = true;
+      if (nowScrollTop > lastScrollTop) {
+        // Scrolling down
+        if (nowScrollTop > scrollThreshold && !isNavbarHidden) {
+          // Scroll down past threshold: hide navbar
+          $('.nav_contain').addClass('active');
+          isNavbarHidden = true;
+        }
+      } else {
+        // Scrolling up
+        if (isNavbarHidden) {
+          // Scroll up: show navbar instantly
+          $('.nav_contain').removeClass('active');
+          isNavbarHidden = false;
+        }
       }
-    } else {
-      // Scrolling up
-      if (isNavbarHidden) {
-        // Scroll up: show navbar instantly
-        $('.nav_contain').removeClass('active');
-        isNavbarHidden = false;
-      }
-    }
 
-    lastScrollTop = nowScrollTop;
-  });
+      lastScrollTop = nowScrollTop;
+    });
+  }
 
   // Hamburger toggle
   const hamburger = $('.nav_hamburger'); // Open & close target
   const navWrap = $('.nav_wrap'); // Active class target
+  const menuLinks = $('.nav_menu_upper_link'); // Menu links that should close the menu on click
 
   // Toggle the 'active' class on the hamburger
   hamburger.on('click', function () {
@@ -81,6 +149,14 @@ function globalNavbar() {
     if (navWrap.hasClass('active')) {
       lenis.stop();
     } else {
+      lenis.start();
+    }
+  });
+
+  // Close the menu when clicking on any .nav_menu_upper_link if navWrap is active
+  menuLinks.on('click', function () {
+    if (navWrap.hasClass('active')) {
+      navWrap.removeClass('active');
       lenis.start();
     }
   });
@@ -97,6 +173,35 @@ function globalNavbar() {
 // ========================================================================================
 // Pages
 // ========================================================================================
+
+// ============================================
+// Homepage
+// ============================================
+function pageHome() {
+  if (window.location.pathname === '/') {
+    // Logo flip animation
+    const state = Flip.getState('.insights_img_body_img');
+    function switchItUp() {
+      const imgElement = document.querySelector('.insights_img_body_img');
+      const newContainer = document.querySelector('.insights_img_body_wrap');
+      if (imgElement && newContainer) {
+        newContainer.appendChild(imgElement);
+      }
+    }
+    switchItUp();
+    Flip.to(state, {
+      duration: 1,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.insights_wrap',
+        start: '30% top',
+        endTrigger: '.process_home_wrap',
+        end: 'top top',
+        scrub: true,
+      },
+    });
+  }
+}
 
 // ============================================
 // Project Template Page
@@ -230,6 +335,18 @@ function pageEditorTemplate() {
 // ========================================================================================
 
 // ============================================
+// Delay
+// ============================================
+function delay(n) {
+  n = n || 2000;
+  return new Promise((done) => {
+    setTimeout(() => {
+      done();
+    }, n);
+  });
+}
+
+// ============================================
 // Lenis Smooth Scroll
 // ============================================
 function useLenis() {
@@ -292,4 +409,13 @@ function useHistoryLinks() {
       window.location.href = 'https://lvly-tv.webflow.io/work';
     }
   });
+}
+
+// ============================================
+// Reset scroll to top on page load
+// ============================================
+function useResetScroll() {
+  window.onbeforeunload = function () {
+    window.scrollTo(0, 0);
+  };
 }
